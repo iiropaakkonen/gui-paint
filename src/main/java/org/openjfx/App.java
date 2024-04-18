@@ -12,6 +12,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.*;
 import javafx.scene.text.*;
+import javafx.scene.image.Image;
+import java.lang.Object;
 
 
 /**
@@ -20,29 +22,37 @@ import javafx.scene.text.*;
 public class App extends Application {
 
     //Universaaleja muuttujia, joita käyttää moni ohjelman metodi
-    double brushSize;
-    javafx.scene.paint.Color c = javafx.scene.paint.Color.BLACK;
-    boolean isBrush = true;
-    String shapeSelection = "";
+    double brushSize; //self explanatory
+    javafx.scene.paint.Color c = javafx.scene.paint.Color.BLACK; //määrittää brushin värin, alussa musta.
+    boolean isBrush = true; //määrittää, onko kyseessä sivellinpiirto vai muotopiirto
+    String shapeSelection = ""; //määrittää, mitä muotoa aletaan piirtää muotopiirrossa.
 
-    //tässä alla hiirtä seuraavia muuttujia
+    //tässä alla hiiren sijaintia painohetkellä seuraavia muuttujia
     double startX;
     double startY;
 
     @Override
     public void start(Stage stage) throws Exception {
+        //Borderpane on
         BorderPane root = new BorderPane();
         StackPane leftPane = new StackPane();
 
         //Setup Canvas for drawing
         Canvas canvas = new Canvas(1280, 720);
         GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.setFill(javafx.scene.paint.Color.WHITE);
-        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
+        //NÄMÄ PIIRTÄVÄT VALKOISEN SUORAKULMION, JOS EI OLE TAUSTAKUVAA, EI KUITENKAAN PAKOLLINEN.
+        //gc.setFill(javafx.scene.paint.Color.WHITE);
+        //gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
+        //TÄSSÄ ESIMERKKI MITEN SAA "RESOURCES"-KANSIOSTA KUVAN TAUSTAKSI
+        //TÄTÄ VOI KÄYTTÄÄ HYÖDYKSI (EHKÄ) OMAN KUVAN LATAAMISEKSI TAUSTAKUVAKSI
+        Image wizCat = new Image(getClass().getResourceAsStream("/wizCat.png"));
+        gc.drawImage(wizCat, 5, 5, canvas.getWidth()-5, canvas.getHeight()-5);
 
         root.setCenter(canvas);
 
+        //BrushSizea varten dropdown-menu, jonka arvot vastaavat siveltimen kokoa.
         ComboBox<Double> brushDropDown = new ComboBox<>();
         brushDropDown.getItems().addAll(
             1.0,
@@ -51,11 +61,13 @@ public class App extends Application {
             4.0,
             5.0
         );
+        //Nämä muuttavat brushsize-valikon napin paikkaa vasemmassa reunassa.
         StackPane.setMargin(brushDropDown, new javafx.geometry.Insets(50, 0, 100, 0));
         StackPane.setAlignment(brushDropDown, Pos.CENTER_LEFT);
+        //Tämä asettaa alkuperäisarvon brushsizelle ohjelman launchatessa
         brushDropDown.setValue(brushSize);
         
-
+        //Brushsize-valikon toiminto tässä.
         brushDropDown.setOnAction(event -> {
             Double selectedOption = brushDropDown.getSelectionModel().getSelectedItem();
             brushSize = selectedOption;
@@ -77,23 +89,27 @@ public class App extends Application {
         //EVENT HANDLERS FOR MOUSE PRESSED AND DRAGGED
         //USES ARROW FUNCTION ->
         canvas.setOnMousePressed(event -> {
+            //isBrush = sivellin käytössä ja pitää seurata hiiren liikettä painettaessa
             if(isBrush) {
                 gc.beginPath();
                 gc.moveTo(event.getX(), event.getY()); //Aloittaa pathin ja siirtää sitä mihin event-muuttuja liikkuu AKA hiiri
                 gc.setStroke(c); //Luo väriä Strokeksi
                 gc.setLineWidth(brushSize); //BRUSH SIZE
+            //!isBrush = sivellin poiskäytöstä, jolloin tallennetaan painohetken x- ja y-koordinaatit. Käytetään tallentamaan kuviopiirron alkupisteet.
             } else if (!isBrush) {
                 startX = event.getX();
                 startY = event.getY();
             }
         });
+        //Tämä seuraa hiirtä ja piirtää viivaa kun sitä vedetään painettuna.
         canvas.setOnMouseDragged(event -> {
             if(isBrush) {    
                 gc.lineTo(event.getX(), event.getY()); //Luo "viivaa" sinne, mihin hiiri liikkuu pisteestä toiseen.
                 gc.stroke();    //Luo lopullisen "piirtämisen"
             }
         });
-
+        //Tämä koko härdelli piirtää lopullisen muodon siihen pisteeseen, jossa hiiren painike päästetään.
+        //Kunnon spagettikoodi, voisi yrittää tehdä hardcoded -> modulaarinen mutta en keksinyt miten niin ihan sama.
         canvas.setOnMouseReleased(event -> {
             if(!isBrush) {
                 gc.setLineWidth(brushSize);
@@ -113,11 +129,7 @@ public class App extends Application {
             }
         });
 
-        /*//Nappi muodon piirtoa varten
-        Button shapeDraw = new Button("Shape");
-        shapeDraw.setOnAction(event -> {
-            isBrush = false;
-        });*/
+        //TÄMÄ ON DROPDOWN-MENU MUODON VALINTAA VARTEN.
         ComboBox<String> shapeDropDown = new ComboBox<>();
         shapeDropDown.getItems().addAll(
             "Rectangle with Fill",
@@ -126,6 +138,7 @@ public class App extends Application {
             "Circle Outline"
         );
         shapeDropDown.setValue("Rectangle with Fill");
+        //TÄSSÄ YLLÄ OLEVAN VALIKON TOIMINTO. Tekee isBrushista falsen eli muotopiirto on käytössä ja määrittää mitä muotoa halutaan piirtää.
         shapeDropDown.setOnAction(event -> {
             String selectedString = shapeDropDown.getSelectionModel().getSelectedItem();
             shapeSelection = selectedString;
@@ -150,6 +163,8 @@ public class App extends Application {
         StackPane.setAlignment(brushColorText, Pos.CENTER_LEFT);
         leftPane.getChildren().add(brushColorText);
 
+        //About kaikki tässä alla joko lisäävät elementtejä vasempaan
+        //reunaan tai siirtävät niiden paikkaa marginaalien ja alignmentin avulla.
         leftPane.getChildren().add(brushDropDown);
         brushDropDown.setMinWidth(110);
 
@@ -172,6 +187,7 @@ public class App extends Application {
         stage.setTitle("Painter");
         stage.show();
     }
+    //Tämä starttaa kun ohjelma starttaa.
     public static void Main(String[] args) {
         launch(args);
     }
