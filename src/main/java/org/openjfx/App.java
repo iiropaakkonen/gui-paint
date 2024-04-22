@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 package org.openjfx;
 
 import javafx.application.Application;
@@ -25,6 +24,9 @@ import java.io.File;
 import java.io.IOException;
 import java.awt.desktop.*;
 import java.awt.image.RenderedImage;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import javafx.embed.swing.SwingFXUtils;
 
 
 
@@ -43,21 +45,25 @@ public class App extends Application {
     boolean isBrush = true; //määrittää, onko kyseessä sivellinpiirto vai muotopiirto
     boolean isEraser = false;
     boolean isText = false;
+    boolean textIsFill = true;
     String shapeSelection = ""; //määrittää, mitä muotoa aletaan piirtää muotopiirrossa.
 
     //tässä alla hiiren sijaintia painohetkellä seuraavia muuttujia
     double startX;
     double startY;
+
     //vitun github
     @Override
     public void start(Stage stage) throws Exception {
         //Borderpane on
         BorderPane root = new BorderPane();
         StackPane leftPane = new StackPane();
+        
 
         //Setup Canvas for drawing
         Canvas canvas = new Canvas(1280, 720);
         GraphicsContext gc = canvas.getGraphicsContext2D();
+        
 
         //NÄMÄ PIIRTÄVÄT VALKOISEN SUORAKULMION, JOS EI OLE TAUSTAKUVAA, EI KUITENKAAN PAKOLLINEN.
         //gc.setFill(javafx.scene.paint.Color.WHITE);
@@ -65,8 +71,8 @@ public class App extends Application {
 
         //TÄSSÄ ESIMERKKI MITEN SAA "RESOURCES"-KANSIOSTA KUVAN TAUSTAKSI
         //TÄTÄ VOI KÄYTTÄÄ HYÖDYKSI (EHKÄ) OMAN KUVAN LATAAMISEKSI TAUSTAKUVAKSI
-        Image wizCat = new Image(getClass().getResourceAsStream("/wizCat.png"));
-        gc.drawImage(wizCat, 5, 5, canvas.getWidth()-5, canvas.getHeight()-5);
+        //Image wizCat = new Image(getClass().getResourceAsStream("/wizCat.png"));
+        //gc.drawImage(wizCat, 5, 5, canvas.getWidth()-5, canvas.getHeight()-5);
 
         root.setCenter(canvas);
 
@@ -93,16 +99,7 @@ public class App extends Application {
             
         );
 
-        //Nämä muuttavat brushsize-valikon napin paikkaa vasemmassa reunassa.
-        StackPane.setMargin(brushDropDown, new javafx.geometry.Insets(50, 0, 100, 0));
-        StackPane.setAlignment(brushDropDown, Pos.CENTER_LEFT);
-        //Tämä asettaa alkuperäisarvon brushsizelle ohjelman launchatessa
-        brushDropDown.setValue(brushSize);
-       
-        //Menu eraser koolle
-        StackPane.setMargin(eraserDropDown, new javafx.geometry.Insets(50,0,210,0));
-        StackPane.setAlignment(eraserDropDown, Pos.CENTER_LEFT);
-        eraserDropDown.setValue("Small");
+        
         
         //Brushsize-valikon toiminto tässä.
         brushDropDown.setOnAction(event -> {
@@ -223,14 +220,23 @@ public class App extends Application {
             //Käyttäjällä on teksi työkalu päällä, piirretään tekstin hiiren klikkaamaan paikkaan
             else if (!isBrush && !isEraser && isText){
                 String text = textField1.getText();
-                if(textField2.getText() == ""){
+                if(textField2.getText() == "" && textIsFill){
                     gc.setFont(new Font("Verdina", 20));
-                    gc.strokeText(text, startX, startY);
-                }else {
+                    gc.fillText(text, startX, startY);
+                }else if (textField2.getText() == "" && !textIsFill) {
+                    gc.setFont(new Font("Verdina", 20));
+                    gc.fillText(text, startX, startY);
+                }else if (textIsFill){
 
                 Double fontSize = Double.parseDouble(textField2.getText());
                 gc.setFont(new Font("Verdina", fontSize));
-                gc.strokeText(text, startX, startY);
+                gc.fillText(text, startX, startY);
+
+                }else if (!textIsFill){
+                    Double fontSize = Double.parseDouble(textField2.getText());
+                    gc.setFont(new Font("Verdina", fontSize));
+                    gc.strokeText(text, startX, startY);
+
                 }
 
             }
@@ -288,6 +294,15 @@ public class App extends Application {
 
         }
         );
+
+        //Nappi täytölle
+        Button fillAll = new Button ("Fill canvas");
+        fillAll.setOnAction(event ->{
+            gc.setFill(c);
+            gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
+        });
+       
         //Nappi teksti työkalun valitsemiselle
         Button enterText = new Button("Enter Text");
         enterText.setOnAction(event -> {
@@ -311,7 +326,7 @@ public class App extends Application {
 
             
         });
-        //Nappi 
+        //Nappi taustakuvan valitsemista
         Button chooseFile = new Button ("Choose a background image");
         chooseFile.setOnAction(event -> {
             FileChooser fileChooser = new FileChooser();
@@ -324,19 +339,26 @@ public class App extends Application {
             gc.drawImage(image, 5, 5, canvas.getWidth()-5, canvas.getHeight()-5);
         });
 
-/* 
+ 
+
+        //Nappi työn tallentamista varten
         Button saveFile = new Button("Save File");
         saveFile.setOnAction(event -> {
             FileChooser savedFile = new FileChooser();
             savedFile.setTitle("Save file");
 
-            File target = savedFile.showSaveDialog(stage);
-            if (savedFile != null){
+            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("PNG files", "*.PNG");
+            savedFile.getExtensionFilters().add(extFilter);
+
+            File file = savedFile.showSaveDialog(stage);
+            if (file != null){
                 try {
                     WritableImage writableImage = new WritableImage(1280,720);
                     canvas.snapshot(null, writableImage);
-                    RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
-                    ImageIo.write(renderedImage, "png", savedFile);
+                    RenderedImage rImage = SwingFXUtils.fromFXImage(writableImage,null);
+                    ImageIO.write(rImage, "png", file);
+                    
+                    
 
                 }catch (IOException ex){
                     ex.printStackTrace();
@@ -349,12 +371,38 @@ public class App extends Application {
 
             
         });
-        */
+
+        //Nappi tekstin tyylin valitsemista varten 
+
+        Button textFill = new Button("on");
+        textFill.setOnAction(event -> {
+            if (textFill.getText() == "on"){
+                textFill.setText("off");
+                textIsFill = false;
+
+            } else{
+                textFill.setText("on");
+                textIsFill = true;
+            }
+            
+        });
+        
+
+        
 
         
         
         
-    
+     //Nämä muuttavat brushsize-valikon napin paikkaa vasemmassa reunassa.
+     StackPane.setMargin(brushDropDown, new javafx.geometry.Insets(50, 0, 100, 0));
+     StackPane.setAlignment(brushDropDown, Pos.CENTER_LEFT);
+     //Tämä asettaa alkuperäisarvon brushsizelle ohjelman launchatessa
+     brushDropDown.setValue(brushSize);
+   
+     //Menu eraser koolle
+     StackPane.setMargin(eraserDropDown, new javafx.geometry.Insets(50,0,210,0));
+     StackPane.setAlignment(eraserDropDown, Pos.CENTER_LEFT);
+     eraserDropDown.setValue("Small");
 
 
 
@@ -381,6 +429,12 @@ public class App extends Application {
         StackPane.setAlignment(eraserSizeText,Pos.CENTER_LEFT);
         leftPane.getChildren().add(eraserSizeText);
 
+        //Teksti textFill on/off
+        Text textFillOnOff = new Text("Text fill on/off");
+        StackPane.setMargin(textFillOnOff, new javafx.geometry.Insets(0,0, 290,0));
+        StackPane.setAlignment(textFillOnOff,Pos.CENTER_LEFT);
+        leftPane.getChildren().add(textFillOnOff);
+
         
 
 
@@ -401,28 +455,37 @@ public class App extends Application {
         StackPane.setMargin(freeDraw, new javafx.geometry.Insets(0, 0, -200, 0));
         StackPane.setAlignment(freeDraw, Pos.CENTER_LEFT);
         
-        StackPane.setMargin(eraserButton, new javafx.geometry.Insets(0, 0, -250, 0));
+        StackPane.setMargin(eraserButton, new javafx.geometry.Insets(0, 0, -200, 45));
         StackPane.setAlignment(eraserButton, Pos.CENTER_LEFT);
 
-        StackPane.setMargin(eraseAll, new javafx.geometry.Insets(0,0,-300,0));
+        StackPane.setMargin(eraseAll, new javafx.geometry.Insets(0,0,-250,0));
         StackPane.setAlignment(eraseAll, Pos.CENTER_LEFT);
+        StackPane.setMargin(fillAll, new javafx.geometry.Insets(0,0,-250,84));
+        StackPane.setAlignment(fillAll, Pos.CENTER_LEFT);
 
-        StackPane.setMargin(enterText,new javafx.geometry.Insets(0,0,-350,0));
+        StackPane.setMargin(enterText,new javafx.geometry.Insets(0,0,-300,95));
         StackPane.setAlignment(enterText, Pos.CENTER_LEFT);
 
-        StackPane.setMargin(textField1, new javafx.geometry.Insets(0,0,-450,0));
-        StackPane.setAlignment(textField1,Pos.CENTER_LEFT);
 
-        StackPane.setMargin(enterFontSize, new javafx.geometry.Insets(0,0,-500,0));
+        StackPane.setMargin(enterFontSize, new javafx.geometry.Insets(0,0,-300,0));
         StackPane.setAlignment(enterFontSize,Pos.CENTER_LEFT);
 
-        StackPane.setMargin(chooseFile, new javafx.geometry.Insets(0,0,-550,0));
+        StackPane.setMargin(chooseFile, new javafx.geometry.Insets(0,0,-350,0));
         StackPane.setAlignment(chooseFile,Pos.CENTER_LEFT);
-       
 
-        leftPane.getChildren().addAll(shapeDropDown, freeDraw,eraserButton,eraseAll,enterText,enterFontSize,chooseFile);
+        StackPane.setMargin(saveFile, new javafx.geometry.Insets(0,0,-200,92));
+        StackPane.setAlignment(saveFile,Pos.CENTER_LEFT);
+       
+        StackPane.setMargin(textFill, new javafx.geometry.Insets(50,0,300,0));
+        StackPane.setAlignment(textFill,Pos.CENTER_LEFT);
+
+        leftPane.getChildren().addAll(shapeDropDown, freeDraw,eraseAll,enterFontSize,chooseFile,saveFile,textFill);
+        leftPane.getChildren().add(enterText);
+        leftPane.getChildren().add(eraserButton);
+        leftPane.getChildren().add(fillAll);
 
         root.setLeft(leftPane);
+        
 
         //  Sovellukselle kuvake, voi tietty vaihtaa mutta täsä ny eka.
         Image logo = new Image (getClass().getClassLoader().getResourceAsStream("icon.png"));  
@@ -446,6 +509,6 @@ public class App extends Application {
     public static void Main(String[] args) {
         launch(args);
     }
+
+
 }
-
-
