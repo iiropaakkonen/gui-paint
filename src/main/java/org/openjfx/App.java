@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 package org.openjfx;
 
 import javafx.application.Application;
@@ -445,6 +446,6 @@ public class App extends Application {
     public static void Main(String[] args) {
         launch(args);
     }
-
-
 }
+
+
