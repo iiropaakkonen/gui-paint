@@ -27,6 +27,7 @@ import java.awt.image.RenderedImage;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.shape.Polygon;
 
 
 
@@ -39,14 +40,14 @@ import javafx.embed.swing.SwingFXUtils;
 public class App extends Application {
 
     //Universaaleja muuttujia, joita käyttää moni ohjelman metodi
-    double brushSize; //self explanatory
-    double eraserSize;
+    double brushSize = 1.0; //self explanatory
+    double eraserSize = 10.0;
     javafx.scene.paint.Color c = javafx.scene.paint.Color.BLACK; //määrittää brushin värin, alussa musta.
     boolean isBrush = true; //määrittää, onko kyseessä sivellinpiirto vai muotopiirto
     boolean isEraser = false;
     boolean isText = false;
     boolean textIsFill = true;
-    String shapeSelection = ""; //määrittää, mitä muotoa aletaan piirtää muotopiirrossa.
+    String shapeSelection = "Rectangle with Fill"; //määrittää, mitä muotoa aletaan piirtää muotopiirrossa.
 
     //tässä alla hiiren sijaintia painohetkellä seuraavia muuttujia
     double startX;
@@ -78,6 +79,7 @@ public class App extends Application {
 
         //BrushSizea varten dropdown-menu, jonka arvot vastaavat siveltimen kokoa.
         ComboBox<Double> brushDropDown = new ComboBox<>();
+
         brushDropDown.getItems().addAll(
             1.0,
             2.0,
@@ -91,6 +93,9 @@ public class App extends Application {
             10.0,
             100.0
         );
+        brushDropDown.setValue(1.0);
+
+
         ComboBox<String> eraserDropDown = new ComboBox<>();
         eraserDropDown.getItems().addAll(
             "Small",
@@ -127,9 +132,13 @@ public class App extends Application {
         colorPicker.setValue(c);
         colorPicker.setOnAction(event -> {
             c = colorPicker.getValue();
+            gc.setStroke(c);
+            gc.setFill(c);
         });
+
         //Värin nappi
         colorPicker.getStyleClass().add("button");
+
         StackPane.setMargin(colorPicker, new javafx.geometry.Insets(100, 50, 50, 0));
 
 
@@ -141,6 +150,8 @@ public class App extends Application {
         canvas.setOnMousePressed(event -> {
             //isBrush = sivellin käytössä ja pitää seurata hiiren liikettä painettaessa
             if(isBrush && !isEraser && !isText) {
+                startX = event.getX();
+                startY = event.getY();
                 gc.beginPath();
                 gc.moveTo(event.getX(), event.getY()); //Aloittaa pathin ja siirtää sitä mihin event-muuttuja liikkuu AKA hiiri
                 gc.setStroke(c); //Luo väriä Strokeksi
@@ -215,8 +226,18 @@ public class App extends Application {
                 } else if (shapeSelection=="Circle Outline") {
                     gc.setStroke(c);
                     gc.strokeOval(startX, startY, event.getX()-startX, event.getY()-startY);
+                } else if (shapeSelection == "Triangle Outline"){
+                    gc.setStroke(c);
+                    gc.strokePolygon(new double[]{startX,startX-100,startX+100},new double[]{startY,startY+100,startY+100}, 3);
+                } else if (shapeSelection == "Triangle with Fill"){
+                    gc.setFill(c);
+                    gc.fillPolygon(new double[]{startX,startX-100,startX+100},new double[]{startY,startY+100,startY+100}, 3);
+                }else if (shapeSelection == "Straight Line"){
+                    gc.setStroke(c);
+                    gc.strokeLine(startX,startY,event.getX(),event.getY());
+
                 }
-            }
+        }
             //Käyttäjällä on teksi työkalu päällä, piirretään tekstin hiiren klikkaamaan paikkaan
             else if (!isBrush && !isEraser && isText){
                 String text = textField1.getText();
@@ -254,7 +275,10 @@ public class App extends Application {
             "Rectangle with Fill",
             "Circle with Fill",
             "Rectangle Outline",
-            "Circle Outline"
+            "Circle Outline",
+            "Triangle Outline",
+            "Triangle with Fill",
+            "Straight Line"
         );
         shapeDropDown.setValue("Rectangle with Fill");
 
@@ -306,6 +330,8 @@ public class App extends Application {
         //Nappi teksti työkalun valitsemiselle
         Button enterText = new Button("Enter Text");
         enterText.setOnAction(event -> {
+            gc.setStroke(c);
+            gc.setFill(c);
             isBrush = false;
             isEraser =false;
             isText = true;
@@ -451,6 +477,7 @@ public class App extends Application {
 
         StackPane.setMargin(shapeDropDown, new javafx.geometry.Insets(0, 0, -150, 0));
         StackPane.setAlignment(shapeDropDown, Pos.CENTER_LEFT);
+        shapeDropDown.setValue(shapeSelection);
 
         StackPane.setMargin(freeDraw, new javafx.geometry.Insets(0, 0, -200, 0));
         StackPane.setAlignment(freeDraw, Pos.CENTER_LEFT);
