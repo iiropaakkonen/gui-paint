@@ -28,6 +28,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.shape.Polygon;
+import javafx.scene.layout.HBox;
 
 
 
@@ -228,10 +229,10 @@ public class App extends Application {
                     gc.strokeOval(startX, startY, event.getX()-startX, event.getY()-startY);
                 } else if (shapeSelection == "Triangle Outline"){
                     gc.setStroke(c);
-                    gc.strokePolygon(new double[]{startX,startX-100,startX+100},new double[]{startY,startY+100,startY+100}, 3);
+                    gc.strokePolygon(new double[]{startX,((startX+event.getX())/2),event.getX()},new double[]{event.getY(),startY,event.getY()}, 3);
                 } else if (shapeSelection == "Triangle with Fill"){
                     gc.setFill(c);
-                    gc.fillPolygon(new double[]{startX,startX-100,startX+100},new double[]{startY,startY+100,startY+100}, 3);
+                    gc.fillPolygon(new double[]{startX,((startX+event.getX())/2),event.getX()},new double[]{event.getY(),startY,event.getY()}, 3);
                 }else if (shapeSelection == "Straight Line"){
                     gc.setStroke(c);
                     gc.strokeLine(startX,startY,event.getX(),event.getY());
@@ -512,6 +513,8 @@ public class App extends Application {
         leftPane.getChildren().add(fillAll);
 
         root.setLeft(leftPane);
+
+
         
 
         //  Sovellukselle kuvake, voi tietty vaihtaa mutta täsä ny eka.
